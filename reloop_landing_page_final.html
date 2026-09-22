@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ReLoop | El Futuro de tu Clóset es Infinito</title>
+  <meta name="description" content="Intercambia ropa de segunda mano y pruébatela con Inteligencia Artificial antes de pedirla. Sostenible, económico y seguro." />
+
+  <!-- Fuentes Tipográficas -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              sand: '#FAF8F5',      // Fondo neutro
+              olive: '#182418',     // Verde oscuro principal
+              earth: '#545D4F',     // Texto secundario
+              lime: '#D2FF3A',      // Neón IA / Conversión
+              limeHover: '#BEF025',
+              mint: '#E4F4D6',
+              surface: '#FFFFFF'
+            }
+          },
+          fontFamily: {
+            heading: ['"Space Grotesk"', 'sans-serif'],
+            sans: ['"Plus Jakarta Sans"', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    .glow-lime { box-shadow: 0 0 32px -4px rgba(210, 255, 58, 0.45); }
+    .badge-blur { backdrop-filter: blur(10px); background: rgba(24, 36, 24, 0.88); }
+    .grid-dots {
+      background-size: 24px 24px;
+      background-image: radial-gradient(rgba(24, 36, 24, 0.08) 1px, transparent 1px);
+    }
+    /* Estilos para inputs del formulario */
+    .input-reloop {
+      @apply w-full bg-white border border-brand-earth/30 rounded-xl px-4 py-3 text-brand-olive focus:outline-none focus:ring-2 focus:ring-brand-lime focus:border-brand-lime transition-all;
+    }
+  </style>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    // Variables de entorno proveídas por la plataforma
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'reloop-app';
+    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+    const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+    let db, auth;
+
+    if (firebaseConfig) {
+      const app = initializeApp(firebaseConfig);
+      db = getFirestore(app);
+      auth = getAuth(app);
+    }
+
+    // Exponer la función de envío al ámbito global para poder usarla en el HTML
+    window.submitLeadForm = async function(event) {
+      event.preventDefault();
+      
+      const btn = document.getElementById('submitBtn');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '<span class="flex items-center gap-2"><i data-lucide="loader-2" class="animate-spin w-5 h-5"></i> Procesando...</span>';
+      lucide.createIcons();
+      btn.disabled = true;
+
+      try {
+        if (!auth || !db) throw new Error("Base de datos no inicializada");
+
+        // Autenticación requerida por Firestore
+        if (initialAuthToken) {
+            await signInWithCustomToken(auth, initialAuthToken);
+        } else {
+            await signInAnonymously(auth);
+        }
+        
+        const user = auth.currentUser;
+        if (!user) throw new Error("No autorizado");
+
+        // Recopilar datos
+        const formData = {
+          nombre: document.getElementById('nombre').value,
+          email: document.getElementById('email').value,
+          whatsapp: document.getElementById('whatsapp').value,
+          ciudad: document.getElementById('ciudad').value,
+          esNegocioLocal: document.getElementById('negocio').checked,
+          fechaRegistro: new Date().toISOString()
+        };
+
+        // Guardar en Firestore siguiendo la regla estricta de rutas
+        const leadsRef = collection(db, 'artifacts', appId, 'public', 'data', 'reloop_leads');
+        await addDoc(leadsRef, formData);
+
+        // Redirección exitosa a Instagram
+        window.location.href = "https://www.instagram.com/reloop_ms/";
+
+      } catch (error) {
+        console.error("Error guardando el lead:", error);
+        
+        // UI feedback de error (sin usar alert)
+        const errorMsg = document.getElementById('form-error-msg');
+        errorMsg.classList.remove('hidden');
+        
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+        lucide.createIcons();
+      }
+    };
+  </script>
+</head>
+
+<body class="bg-brand-sand text-brand-olive font-sans antialiased selection:bg-brand-lime selection:text-brand-olive overflow-x-hidden">
+
+  <!-- ============================================================ -->
+  <!-- HEADER MINIMALISTA (SIN MENÚ PARA EVITAR FUGAS CRO)         -->
+  <!-- ============================================================ -->
+  <!-- Se establece la altura fija con h-20 (80px) y se quita el padding vertical (py) -->
+  <header class="w-full h-20 px-6 sm:px-12 flex justify-between items-center border-b border-brand-olive/10 bg-brand-sand/90 backdrop-blur sticky top-0 z-50">
+    <div class="flex items-center h-full">
+      <!-- Cambia 'h-12' a 'h-14', 'h-16' o hasta 'h-20' para agrandarlo. Al quitar mb-6 se centra perfecto. -->
+      <img src="Logo Transparente.png" alt="ReLoop Logo" class="h-16 w-auto object-contain" />
+    </div>
+
+    <!-- Micro-insignia de confianza local -->
+    <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-brand-mint text-brand-olive border border-brand-olive/10 hidden sm:flex">
+      <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+      Moda Circular + IA en Colombia
+    </div>
+  </header>
+
+  <main>
+    <section class="relative pt-12 pb-20 px-6 sm:px-12 max-w-7xl mx-auto grid-dots">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+        
+        <!-- Bloque de Texto -->
+        <div class="lg:col-span-6 flex flex-col items-start space-y-6">
+          <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-brand-olive text-brand-sand text-xs font-medium">
+            <i data-lucide="sparkles" class="w-3.5 h-3.5 text-brand-lime"></i>
+            <span>Probador Virtual de Alta Precisión</span>
+          </div>
+
+          <h1 class="font-heading font-bold text-4xl sm:text-6xl tracking-tight leading-[1.08] text-brand-olive">
+            Renueva tu estilo de forma inteligente. <br class="hidden sm:block" />
+            <span class="bg-brand-lime px-2.5 py-0.5 rounded-lg inline-block mt-1">Pruébate la ropa con IA</span> sin salir de casa.
+          </h1>
+
+          <p class="text-base sm:text-lg text-brand-earth max-w-xl leading-relaxed">
+            Descubre <strong class="text-brand-olive font-semibold">ReLoop</strong>: La plataforma donde intercambias prendas de segunda mano y utilizas Inteligencia Artificial para visualizar su ajuste exacto en tu cuerpo. Sostenible y sin sorpresas.
+          </p>
+
+          <div class="pt-2">
+            <button onclick="document.getElementById('formulario-acceso').scrollIntoView({behavior: 'smooth'})" class="glow-lime bg-brand-lime hover:bg-brand-limeHover text-brand-olive font-heading font-bold text-lg px-8 py-4 rounded-xl transition-all duration-300 transform hover:-translate-y-0.5 shadow-lg flex items-center justify-center gap-3">
+              <span>Acceder al Probador Virtual</span>
+              <i data-lucide="arrow-down" class="w-5 h-5"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Video Hero (Sustituye la imagen estática) -->
+        <div class="lg:col-span-6 relative flex justify-center lg:justify-end">
+          <div class="relative w-full max-w-[340px] aspect-[9/16] rounded-[2.5rem] overflow-hidden border-[6px] border-brand-olive shadow-2xl bg-black">
+            <!-- Reproductor de video nativo, loop, sin sonido, autoplay -->
+            <video 
+              src="AI_virtual_try-on_video_prompt_20260914160825.mp4" 
+              autoplay 
+              loop 
+              muted 
+              playsinline 
+              class="w-full h-full object-cover"
+            ></video>
+            
+            <!-- Interfaz superpuesta (UI Mockup) -->
+            <div class="absolute top-4 inset-x-0 flex justify-center">
+              <span class="bg-black/60 backdrop-blur-md text-white text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-wider flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
+                Demostración IA en vivo
+              </span>
+            </div>
+          </div>
+          <!-- Glow decorativo -->
+          <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-brand-lime/20 rounded-full filter blur-[60px] -z-10"></div>
+        </div>
+
+      </div>
+    </section>
+
+    <section class="py-24 bg-brand-olive text-brand-sand px-6 sm:px-12 relative overflow-hidden">
+      <div class="max-w-7xl mx-auto">
+        
+        <div class="text-center max-w-3xl mx-auto mb-12 space-y-4">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-brand-lime text-xs font-mono font-semibold uppercase tracking-widest">
+            <span>Tecnología de Adaptación Corporal</span>
+          </div>
+          <h2 class="font-heading font-bold text-3xl sm:text-5xl text-white">
+            La incertidumbre se acabó.
+          </h2>
+          <p class="text-brand-sand/80 text-base sm:text-lg">
+            Nuestra IA adapta la prenda a tu cuerpo para que sepas exactamente cómo te lucirá antes de hacer el intercambio.
+          </p>
+
+          <!-- Pestañas de Control -->
+          <div class="pt-6 flex flex-wrap justify-center gap-3" id="tab-container">
+            <button onclick="switchTab('caso-mujer')" id="btn-mujer" class="tab-btn bg-brand-lime text-brand-olive border-brand-lime px-5 py-2.5 rounded-xl text-sm font-heading font-bold transition border">
+              Caso 01: Top & Pantalón
+            </button>
+            <button onclick="switchTab('caso-hombre')" id="btn-hombre" class="tab-btn bg-white/5 text-white border-white/20 hover:border-brand-lime/50 px-5 py-2.5 rounded-xl text-sm font-heading font-bold transition border">
+              Caso 02: Polo Vintage
+            </button>
+          </div>
+        </div>
+
+        <!-- Tríptico 1: Caso Mujer (Imágenes Originales proporcionadas) -->
+        <div id="caso-mujer" class="tab-content block transition-opacity duration-500">
+          <div class="bg-white/5 border border-white/10 rounded-[2rem] p-6 sm:p-10 shadow-2xl backdrop-blur-md">
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+              
+              <!-- Paso 1 -->
+              <div class="md:col-span-3 flex flex-col items-center">
+                <div class="w-full h-80 rounded-2xl overflow-hidden bg-black/60 border border-white/15 relative p-4 flex flex-col items-center justify-between">
+                  <span class="self-start bg-brand-olive/90 text-brand-sand font-mono text-[11px] px-2.5 py-1 rounded-md font-bold border border-white/10">Paso 1: Prenda</span>
+                  <img src="BLUSA-MUJER-1.jpeg" alt="Blusa Mujer ReLoop" class="w-full h-52 object-contain" />
+                  <div class="text-center w-full">
+                    <p class="text-xs font-bold text-white">Prenda del Catálogo</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="md:col-span-1 flex justify-center text-brand-lime font-heading font-bold text-3xl"><i data-lucide="plus"></i></div>
+
+              <!-- Paso 2 -->
+              <div class="md:col-span-3 flex flex-col items-center">
+                <div class="w-full h-80 rounded-2xl overflow-hidden bg-stone-900 border border-white/15 relative">
+                  <span class="absolute top-3 left-3 bg-brand-olive/90 text-brand-sand font-mono text-[11px] px-2.5 py-1 rounded-md font-bold z-10 border border-white/10">Paso 2: Foto Base</span>
+                  <img src="Mujer Original.jfif" alt="Usuario Base ReLoop" class="w-full h-full object-cover object-top opacity-95" />
+                </div>
+              </div>
+
+              <div class="md:col-span-1 flex justify-center text-brand-lime font-heading font-bold text-3xl">
+                <i data-lucide="arrow-right" class="hidden md:block"></i><i data-lucide="arrow-down" class="md:hidden"></i>
+              </div>
+
+              <!-- Paso 3 -->
+              <div class="md:col-span-4 flex flex-col items-center">
+                <div class="w-full h-80 rounded-2xl overflow-hidden border-2 border-brand-lime relative shadow-2xl">
+                  <div class="absolute top-3 left-3 bg-brand-lime text-brand-olive font-mono text-[11px] px-2.5 py-1 rounded-md font-bold z-10 flex items-center gap-1 shadow">
+                    <i data-lucide="sparkles" class="w-3 h-3"></i> Paso 3: Resultado IA
+                  </div>
+                  <img src="Mujer Probador.jfif" alt="Resultado Probador ReLoop" class="w-full h-full object-cover object-top" />
+                  <div class="absolute inset-x-0 bottom-0 badge-blur p-4 border-t border-brand-lime/30 flex justify-between items-center">
+                    <div>
+                      <p class="text-xs font-heading font-bold text-brand-lime">Ajuste Perfecto</p>
+                      <p class="text-[11px] text-white/85">Misma postura, iluminación y rostro</p>
+                    </div>
+                    <span class="text-[10px] bg-brand-lime text-brand-olive font-bold px-2 py-0.5 rounded">FIT REAL</span>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- Tríptico 2: Caso Hombre (Juanda) -->
+        <div id="caso-hombre" class="tab-content hidden transition-opacity duration-500">
+          <div class="bg-white/5 border border-white/10 rounded-[2rem] p-6 sm:p-10 shadow-2xl backdrop-blur-md">
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+              <!-- Paso 1 -->
+              <div class="md:col-span-3 flex flex-col items-center">
+                <div class="w-full h-80 rounded-2xl overflow-hidden bg-black/60 border border-white/15 relative p-4 flex flex-col items-center justify-between">
+                  <span class="self-start bg-brand-olive/90 text-brand-sand font-mono text-[11px] px-2.5 py-1 rounded-md font-bold border border-white/10">Paso 1: Prenda</span>
+                  <img src="louis-vuitton-polo-de-punto-de-ochos-a-rayas-HVN71WAUR531_PM2_Front-view.jpeg" alt="Polo ReLoop" class="w-full h-52 object-contain" />
+                  <div class="text-center w-full">
+                    <p class="text-xs font-bold text-white">Prenda del Catálogo</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="md:col-span-1 flex justify-center text-brand-lime font-heading font-bold text-3xl"><i data-lucide="plus"></i></div>
+
+              <!-- Paso 2 -->
+              <div class="md:col-span-3 flex flex-col items-center">
+                <div class="w-full h-80 rounded-2xl overflow-hidden bg-stone-900 border border-white/15 relative">
+                  <span class="absolute top-3 left-3 bg-brand-olive/90 text-brand-sand font-mono text-[11px] px-2.5 py-1 rounded-md font-bold z-10 border border-white/10">Paso 2: Foto Base</span>
+                  <img src="JuanEudii.jfif" alt="Juanda Base ReLoop" class="w-full h-full object-cover object-top opacity-95" />
+                </div>
+              </div>
+
+              <div class="md:col-span-1 flex justify-center text-brand-lime font-heading font-bold text-3xl">
+                <i data-lucide="arrow-right" class="hidden md:block"></i><i data-lucide="arrow-down" class="md:hidden"></i>
+              </div>
+
+              <!-- Paso 3 -->
+              <div class="md:col-span-4 flex flex-col items-center">
+                <div class="w-full h-80 rounded-2xl overflow-hidden border-2 border-brand-lime relative shadow-2xl">
+                  <div class="absolute top-3 left-3 bg-brand-lime text-brand-olive font-mono text-[11px] px-2.5 py-1 rounded-md font-bold z-10 flex items-center gap-1 shadow">
+                    <i data-lucide="sparkles" class="w-3 h-3"></i> Paso 3: Resultado IA
+                  </div>
+                  <img src="Gemini_Generated_Image_d1lzepd1lzepd1lz.jpeg" alt="Juanda Probador ReLoop" class="w-full h-full object-cover object-top" />
+                  <div class="absolute inset-x-0 bottom-0 badge-blur p-4 border-t border-brand-lime/30 flex justify-between items-center">
+                    <div>
+                      <p class="text-xs font-heading font-bold text-brand-lime">Caída de Tela Natural</p>
+                      <p class="text-[11px] text-white/85">Corte ajustado a la postura real</p>
+                    </div>
+                    <span class="text-[10px] bg-brand-lime text-brand-olive font-bold px-2 py-0.5 rounded">FIT REAL</span>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <section class="py-20 px-6 sm:px-12 max-w-7xl mx-auto">
+      <div class="text-center max-w-2xl mx-auto mb-16 space-y-2">
+        <h2 class="font-heading font-bold text-3xl sm:text-5xl text-brand-olive tracking-tight">
+          ¿Cómo funciona ReLoop?
+        </h2>
+        <p class="text-brand-earth text-sm sm:text-base">Tres pasos sencillos para hacer circular tu ropa.</p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+        
+        <!-- Columna Izquierda: Paso a Paso Vertical -->
+        <div class="flex flex-col space-y-6">
+          <div class="bg-brand-surface p-6 sm:p-8 rounded-2xl border border-brand-olive/10 shadow-sm flex gap-5 items-start transition hover:border-brand-lime/50">
+            <div class="w-12 h-12 rounded-xl bg-brand-mint flex-shrink-0 flex items-center justify-center text-brand-olive"><i data-lucide="upload-cloud"></i></div>
+            <div>
+              <h3 class="font-heading font-bold text-xl text-brand-olive mb-2">1. Sube y Explora</h3>
+              <p class="text-brand-earth text-sm">Sube las prendas que ya no usas y explora el clóset de la comunidad de forma segura.</p>
+            </div>
+          </div>
+          
+          <div class="bg-brand-surface p-6 sm:p-8 rounded-2xl border-2 border-brand-lime shadow-md relative flex gap-5 items-start transform md:-translate-x-4">
+            <div class="absolute -top-3 -right-3 bg-brand-olive text-brand-lime text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-lg">El Diferencial</div>
+            <div class="w-12 h-12 rounded-xl bg-brand-lime flex-shrink-0 flex items-center justify-center text-brand-olive"><i data-lucide="sparkles"></i></div>
+            <div>
+              <h3 class="font-heading font-bold text-xl text-brand-olive mb-2">2. Pruébatelo con IA</h3>
+              <p class="text-brand-earth text-sm">Usa el probador virtual interactivo. Compara tu foto original y mira la caída real de la prenda antes de decidir.</p>
+            </div>
+          </div>
+
+          <div class="bg-brand-surface p-6 sm:p-8 rounded-2xl border border-brand-olive/10 shadow-sm flex gap-5 items-start transition hover:border-brand-lime/50">
+            <div class="w-12 h-12 rounded-xl bg-brand-mint flex-shrink-0 flex items-center justify-center text-brand-olive"><i data-lucide="truck"></i></div>
+            <div>
+              <h3 class="font-heading font-bold text-xl text-brand-olive mb-2">3. Intercambia y Disfruta</h3>
+              <p class="text-brand-earth text-sm">La transportadora te lo lleva. Renueva tu clóset con confianza y cero impacto ambiental.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Columna Derecha: Visualización Interactiva (Estilo Referencia) -->
+        <div class="relative flex justify-center lg:justify-end">
+          <!-- Tarjeta Oscura Contenedora -->
+          <div class="bg-[#182418] rounded-[2rem] p-3 pb-5 shadow-2xl border border-brand-lime/20 w-full max-w-[420px] flex flex-col relative">
+            
+            <!-- Contenedor del Slider Antes/Después -->
+            <div class="relative w-full aspect-[4/5] rounded-[1.5rem] overflow-hidden group select-none bg-black">
+              
+              <!-- Imagen 2 (Después / Try-On IA) - Fondo -->
+              <img src="Mujer Probador.jfif" alt="Try-On IA" class="absolute inset-0 w-full h-full object-cover object-top" />
+              <div class="absolute top-4 right-4 bg-brand-lime text-brand-olive text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 z-0 shadow-lg border border-brand-lime/50">
+                <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> Try-On IA
+              </div>
+
+              <!-- Imagen 1 (Antes / Base) - Capa Superior Dinámica con Clip-Path -->
+              <div id="before-image" class="absolute inset-0 w-full h-full z-10" style="clip-path: polygon(0 0, 50% 0, 50% 100%, 0 100%);">
+                <img src="Mujer Original.jfif" alt="Foto Base" class="absolute inset-0 w-full h-full object-cover object-top" />
+                <div class="absolute top-4 left-4 bg-black/60 backdrop-blur-md text-white text-xs font-bold px-3 py-1.5 rounded-full border border-white/20 shadow-lg">
+                  Foto Base
+                </div>
+              </div>
+
+              <!-- Línea Divisoria Interactiva -->
+              <div id="slider-line" class="absolute top-0 bottom-0 left-[50%] w-[2.5px] bg-brand-lime shadow-[0_0_12px_rgba(210,255,58,0.8)] z-20 pointer-events-none -ml-[1.25px]">
+                <!-- Manija de agarre visual -->
+                <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-brand-lime rounded-full shadow-lg flex items-center justify-center border-2 border-[#182418]">
+                  <div class="flex gap-1">
+                    <div class="w-0.5 h-3.5 bg-[#182418] rounded-full"></div>
+                    <div class="w-0.5 h-3.5 bg-[#182418] rounded-full"></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Input Rango (Controlador del Slider) -->
+              <input type="range" min="0" max="100" value="50" class="absolute inset-0 w-full h-full opacity-0 cursor-ew-resize z-30 touch-pan-y"
+                     oninput="document.getElementById('before-image').style.clipPath = `polygon(0 0, ${this.value}% 0, ${this.value}% 100%, 0 100%)`; document.getElementById('slider-line').style.left = `${this.value}%`;" />
+            </div>
+
+            <!-- Footer de la Tarjeta (Datos de la Prenda tipo Mockup) -->
+            <div class="pt-5 px-3 flex justify-between items-end">
+              <div>
+                <h4 class="text-brand-lime font-bold text-lg leading-tight mb-1">Top & Pantalón Clásico</h4>
+                <p class="text-brand-sand/80 text-sm">Misma pose · Ajuste natural de tela</p>
+              </div>
+              <div class="bg-[#2A3B2A] border border-brand-lime/40 text-brand-lime text-xs font-bold px-3 py-1.5 rounded-lg whitespace-nowrap">
+                Match 99%
+              </div>
+            </div>
+            
+          </div>
+          
+          <!-- Resplandor decorativo de fondo -->
+          <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full max-w-[400px] bg-brand-lime/10 rounded-full filter blur-[80px] -z-10"></div>
+        </div>
+
+      </div>
+    </section>
+
+    <section id="formulario-acceso" class="py-24 px-6 sm:px-12 relative overflow-hidden bg-[#EAE7DF] border-t border-brand-olive/10">
+      <div class="max-w-xl mx-auto">
+        
+        <div class="text-center mb-10">
+          <!-- Logo sin marco y con colores originales. 
+               Para cambiar el tamaño, modifica la clase 'h-20'. 
+               (Ej: h-24 para más grande, h-16 para más pequeño) -->
+          <img src="Logo Transparente.png" alt="ReLoop Logo" class="h-24 w-auto mx-auto object-contain mb-6" />
+          
+          <h2 class="font-heading font-bold text-3xl sm:text-4xl text-brand-olive tracking-tight">
+            Únete a la Revolución ReLoop
+          </h2>
+          <p class="text-brand-earth mt-3">
+            Déjanos tus datos para acceder a la plataforma y descubrir una nueva forma de consumir moda.
+          </p>
+        </div>
+
+        <!-- Contenedor del Formulario -->
+        <div class="bg-white p-8 rounded-[2rem] shadow-xl border border-brand-olive/5">
+          
+          <div id="form-error-msg" class="hidden mb-6 p-4 bg-red-50 text-red-700 text-sm rounded-xl border border-red-200 flex items-start gap-3">
+            <i data-lucide="alert-circle" class="w-5 h-5 flex-shrink-0 mt-0.5"></i>
+            <p>Ocurrió un error al procesar tu solicitud. Revisa tu conexión a internet e intenta de nuevo en unos momentos.</p>
+          </div>
+
+          <form onsubmit="window.submitLeadForm(event)" class="space-y-5">
+            
+            <div>
+              <label for="nombre" class="block text-sm font-semibold text-brand-olive mb-1.5">Nombre Completo</label>
+              <input type="text" id="nombre" required placeholder="Ej: Juan David Pérez" class="input-reloop" />
+            </div>
+
+            <div>
+              <label for="email" class="block text-sm font-semibold text-brand-olive mb-1.5">Correo Electrónico</label>
+              <input type="email" id="email" required placeholder="tu@correo.com" class="input-reloop" />
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div>
+                <label for="whatsapp" class="block text-sm font-semibold text-brand-olive mb-1.5">Número de WhatsApp</label>
+                <input type="tel" id="whatsapp" required placeholder="300 000 0000" class="input-reloop" />
+              </div>
+              <div>
+                <label for="ciudad" class="block text-sm font-semibold text-brand-olive mb-1.5">Ciudad de Residencia</label>
+                <input type="text" id="ciudad" required placeholder="Ej: Cali, Bogotá..." class="input-reloop" />
+              </div>
+            </div>
+
+            <!-- Checkbox Estratégico -->
+            <div class="pt-2">
+              <label class="flex items-start gap-3 cursor-pointer p-4 rounded-xl bg-brand-sand/50 border border-brand-earth/20 hover:bg-brand-mint/30 transition">
+                <div class="relative flex items-center mt-0.5">
+                  <input type="checkbox" id="negocio" class="peer h-5 w-5 cursor-pointer appearance-none rounded border-2 border-brand-earth/50 checked:border-brand-olive checked:bg-brand-olive transition-all" />
+                  <i data-lucide="check" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white pointer-events-none opacity-0 peer-checked:opacity-100"></i>
+                </div>
+                <div class="flex flex-col">
+                  <span class="text-sm font-semibold text-brand-olive">Soy un negocio local</span>
+                  <span class="text-xs text-brand-earth">Marca esta casilla SÓLO si tienes una marca o tienda y estás interesado en ser colaborador ReLoop.</span>
+                </div>
+              </label>
+            </div>
+
+            <!-- Botón Submit -->
+            <div class="pt-6">
+              <button type="submit" id="submitBtn" class="w-full glow-lime bg-brand-lime hover:bg-brand-limeHover text-brand-olive font-heading font-bold text-lg px-8 py-4 rounded-xl transition-all shadow-md flex items-center justify-center gap-2">
+                Da Click y Síguenos en nuestras redes
+                <i data-lucide="instagram" class="w-5 h-5 ml-1"></i>
+              </button>
+            </div>
+
+          </form>
+        </div>
+
+      </div>
+    </section>
+  </main>
+
+  <footer class="py-8 bg-brand-olive text-brand-sand/60 text-xs text-center px-6">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
+      <p>© 2026 ReLoop Colombia. Plataforma de Moda Circular.</p>
+      <p>Tratamiento de datos personales vigilado conforme a la Ley 1581 de 2012.</p>
+    </div>
+  </footer>
+
+  <script>
+    lucide.createIcons();
+
+    function switchTab(tabId) {
+      // Ocultar todos los contenidos
+      document.querySelectorAll('.tab-content').forEach(el => {
+        el.classList.add('hidden');
+        el.classList.remove('block');
+      });
+      // Resetear botones
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.className = 'tab-btn bg-white/5 text-white border-white/20 hover:border-brand-lime/50 px-5 py-2.5 rounded-xl text-sm font-heading font-bold transition border';
+      });
+
+      // Activar seleccionado
+      document.getElementById(tabId).classList.remove('hidden');
+      document.getElementById(tabId).classList.add('block');
+      
+      const activeBtnId = tabId === 'caso-mujer' ? 'btn-mujer' : 'btn-hombre';
+      document.getElementById(activeBtnId).className = 'tab-btn bg-brand-lime text-brand-olive border-brand-lime px-5 py-2.5 rounded-xl text-sm font-heading font-bold transition border';
+    }
+  </script>
+</body>
+</html>
