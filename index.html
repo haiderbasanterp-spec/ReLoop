@@ -41,6 +41,10 @@
     }
   </script>
 
+  <npm install firebase>
+  <npm install -g firebase-tools>
+
+    
   <style>
     .glow-lime { box-shadow: 0 0 32px -4px rgba(210, 255, 58, 0.45); }
     .badge-blur { backdrop-filter: blur(10px); background: rgba(24, 36, 24, 0.88); }
@@ -61,7 +65,15 @@
 
     // Variables de entorno proveídas por la plataforma
     const appId = typeof __app_id !== 'undefined' ? __app_id : 'reloop-app';
-    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+    const firebaseConfig = {
+  apiKey: "AIzaSyAXK_o-5qgXLtOGD24pDWXSieQWE31jAwA",
+  authDomain: "reloop-project-8ebca.firebaseapp.com",
+  projectId: "reloop-project-8ebca",
+  storageBucket: "reloop-project-8ebca.firebasestorage.app",
+  messagingSenderId: "883786727789",
+  appId: "1:883786727789:web:53cea505719087b16d5a64",
+  measurementId: "G-QDJS65JL3T"
+};
     const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
     let db, auth;
